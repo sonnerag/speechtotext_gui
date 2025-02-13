@@ -9,6 +9,8 @@ from google.cloud import language_v2
 import datetime
 import document
 from underthesea import word_tokenize
+import time
+
 
 # Parameters for recording
 FORMAT = pyaudio.paInt16
@@ -264,6 +266,8 @@ def export_transcription():
             doc.add_paragraph(full_transcription)
             doc.save(file_path)
         print(f"Transcription exported to {file_path}")
+
+        
 # Tkinter GUI
 root = tk.Tk()
 root.title("Vietnamese Meeting Transcriber")
@@ -354,6 +358,7 @@ def toggle_recording():
         stop_recording()
     recording = not recording
 
+
 # Start/Stop recording button
 record_button = ttk.Button(buttons_frame, text="Start Recording", command=toggle_recording, style="Start.TButton")
 record_button.grid(row=0, column=0, padx=5)
@@ -369,6 +374,51 @@ export_button.grid(row=0, column=2, padx=5)
 # Exit button
 exit_button = ttk.Button(buttons_frame, text="Exit", command=root.destroy, style="Custom.TButton")
 exit_button.grid(row=0, column=3, padx=5)
+
+# Timeline Frame
+timeline_frame = ttk.Frame(root)
+timeline_frame.pack(pady=10, fill=tk.BOTH, expand=False)
+
+# Timeline Canvas
+timeline_canvas = tk.Canvas(timeline_frame, height=50, bg="lightgray")
+timeline_canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+# Add a line to represent the timeline
+line = timeline_canvas.create_line(0, 25, 0, 25, width=4, fill="blue")
+time_label = ttk.Label(timeline_frame, text="Time: 0:00", font=("Arial", 12))
+time_label.pack(pady=5)
+
+# Global variables for animation
+timeline_running = False
+current_time = 0  # in seconds
+line_length = 0  # current position
+time_range = 60  # initial range (1 minute)
+
+
+# Animate timeline
+def animate_timeline():
+    global timeline_running, current_time, line_length, time_range
+    timeline_running = True
+    canvas_width = timeline_canvas.winfo_width()
+    
+    while timeline_running:
+        time.sleep(0.1)  # Update every 100ms
+        line_length += canvas_width / (time_range * 10)  # Move incrementally
+        current_time += 0.1
+        
+        # Update canvas line position
+        if line_length > canvas_width:
+            # Reset the timeline when it completes
+            line_length = 0
+            current_time = 0
+            time_range *= 10  # Increase the time range
+        timeline_canvas.coords(line, 0, 25, line_length, 25)
+        
+        # Update time label
+        minutes = int(current_time // 60)
+        seconds = int(current_time % 60)
+        time_label.config(text=f"Time: {minutes}:{seconds:02d}")
+        timeline_canvas.update()
 
 
 root.mainloop()
